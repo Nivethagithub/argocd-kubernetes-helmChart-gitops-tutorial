@@ -1,0 +1,53 @@
+# Source: https://gist.github.com/93ff695d845bf0653cd75433edb82078
+
+################################################################
+# How To Use Helm Charts Inside Kubernetes Kustomize Manifests #
+# https://youtube.com/shorts/2GXC8WtpySc                       #
+################################################################
+
+# Additional Info:
+# - Kustomize - How to Simplify Kubernetes Configuration Management: https://youtu.be/Twtbg6LFnAg
+# - Helm vs Kustomize - The Fight Between Templating and Patching in Kubernetes: https://youtu.be/ZMFYSm0ldQ0
+
+#########
+# Setup #
+#########
+
+# Create a Kubernetes cluster
+# The demo is using Rancher Desktop, but any other Kubernetes
+#   cluster should work.
+
+git clone https://github.com/vfarcic/kustomize-demo
+
+cd kustomize-demo
+
+kubectl create namespace dev
+
+###############################################
+# Use Helm Charts Inside Kubernetes Kustomize #
+###############################################
+
+echo "
+helmCharts:
+  - name: postgresql
+    releaseName: postgresql
+    repo: https://charts.bitnami.com/bitnami
+    version: 12.1.2
+    namespace: dev
+    valuesFile: postgresql-values.yaml
+" | tee -a kustomize/base/kustomization.yaml
+
+kubectl kustomize --enable-helm kustomize/base
+
+kubectl kustomize --enable-helm kustomize/base \
+    | kubectl apply --filename -
+
+kubectl --namespace dev get all --output name
+
+###########
+# Destroy #
+###########
+
+yq --inplace "del(.helmCharts)" kustomize/base/kustomization.yaml
+
+# Destroy or reset the Kubernetes cluster
